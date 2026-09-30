@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZNO Trainer — тренажер НМТ/ЗНО</title>
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --text:#182230; --muted:#667085;
+  --primary:#315efb; --primary2:#2448c7; --good:#16834b; --bad:#d92d20;
+  --border:#e4e7ec; --soft:#eef3ff; --shadow:0 10px 30px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+button,select{font:inherit}
+.app{max-width:1180px;margin:auto;padding:24px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.logo{font-size:23px;font-weight:800}.logo span{color:var(--primary)}
+.subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.badge{background:#fff;border:1px solid var(--border);padding:8px 12px;border-radius:20px;font-size:13px}
+.layout{display:grid;grid-template-columns:245px 1fr;gap:20px}
+nav,.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+nav{padding:12px;height:max-content}
+.navbtn{display:block;width:100%;text-align:left;border:0;background:transparent;padding:12px;border-radius:10px;cursor:pointer;color:var(--text)}
+.navbtn:hover,.navbtn.active{background:var(--soft);color:var(--primary);font-weight:700}
+main{min-width:0}.card{padding:22px}
+h1,h2,h3{margin-top:0}.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.subject{padding:18px;border:1px solid var(--border);border-radius:13px;cursor:pointer;background:#fff}
+.subject:hover{border-color:var(--primary);transform:translateY(-1px)}
+.subject.selected{border:2px solid var(--primary);background:var(--soft)}
+.subject strong{display:block;font-size:17px;margin-bottom:6px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+button.primary,button.secondary,button.danger{border:0;border-radius:10px;padding:11px 16px;cursor:pointer;font-weight:700}
+.primary{background:var(--primary);color:#fff}.primary:hover{background:var(--primary2)}
+.secondary{background:#eef2f6;color:var(--text)}.danger{background:#fee4e2;color:var(--bad)}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:16px;border:1px solid var(--border);border-radius:12px}
+.stat .num{font-size:27px;font-weight:800}.stat small{color:var(--muted)}
+.topic{margin:12px 0}.topichead{display:flex;justify-content:space-between;margin-bottom:5px;font-size:14px}
+.bar{height:9px;background:#edf0f3;border-radius:9px;overflow:hidden}.fill{height:100%;border-radius:9px;background:var(--primary)}
+.question-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:15px}
+.question{font-size:21px;line-height:1.45;margin:15px 0 20px}
+.answers{display:grid;gap:10px}
+.answer{padding:14px 16px;border:1px solid var(--border);background:#fff;border-radius:11px;text-align:left;cursor:pointer}
+.answer:hover{border-color:var(--primary);background:var(--soft)}
+.answer.correct{border-color:var(--good);background:#ecfdf3}.answer.wrong{border-color:var(--bad);background:#fef3f2}
+.answer.disabled{cursor:default}
+.explanation{margin-top:15px;padding:14px;border-radius:11px;background:#f8fafc;border:1px solid var(--border)}
+.timer{font-weight:800}.timer.warn{color:var(--bad)}
+.alert{padding:13px 15px;border-radius:11px;margin:12px 0}.alert.good{background:#ecfdf3;color:#11633b}.alert.warn{background:#fffaeb;color:#8a5a00}.alert.bad{background:#fef3f2;color:#a4261d}
+.hidden{display:none!important}
+.small{font-size:13px}
+.list{margin:8px 0;padding-left:20px}.list li{margin:7px 0}
+footer{text-align:center;color:var(--muted);font-size:12px;margin:22px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.statgrid{grid-template-columns:1fr 1fr}nav{display:flex;gap:5px;overflow:auto}.navbtn{white-space:nowrap;width:auto}.app{padding:14px}}
+@media(max-width:500px){.grid{grid-template-columns:1fr}.statgrid{grid-template-columns:1fr 1fr}.question{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><div class="logo">🎓 ZNO <span>Trainer</span></div><div class="subtitle">Персональний тренажер НМТ/ЗНО</div></div>
+  <div class="badge" id="saveStatus">● Дані збережено</div>
+</header>
+
+<div class="layout">
+<nav>
+  <button class="navbtn active" data-page="home">🏠 Головна</button>
+  <button class="navbtn" data-page="practice">📝 Тренування</button>
+  <button class="navbtn" data-page="analytics">📊 Аналіз</button>
+  <button class="navbtn" data-page="review">🔴 Повторити</button>
+</nav>
+
+<main>
+<section id="home" class="page">
+  <div class="card">
+    <h1>Підготовка до НМТ</h1>
+    <p class="muted">Обери предмет і почни коротке тренування. Додаток запам'ятає твої результати.</p>
+    <div class="grid" id="subjects"></div>
+    <div class="actions">
+      <button class="primary" onclick="startTest()">Почати тренування</button>
+      <button class="secondary" onclick="showPage('analytics')">Переглянути прогрес</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h2>Що аналізує система?</h2>
+    <div class="grid">
+      <div><b>🎯 Точність</b><p class="muted small">Які питання ти виконуєш правильно.</p></div>
+      <div><b>🔴 Слабкі теми</b><p class="muted small">Де помилки повторюються.</p></div>
+      <div><b>🔁 Повторення</b><p class="muted small">Теми з помилками потрапляють у повторення.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="practice" class="page hidden">
+  <div class="card">
+    <div class="question-meta"><span id="qCounter"></span><span class="timer" id="timer"></span></div>
+    <div class="bar"><div class="fill" id="qProgress" style="width:0%"></div></div>
+    <div class="question" id="questionText"></div>
+    <div class="answers" id="answers"></div>
+    <div id="feedback"></div>
+    <div class="actions hidden" id="nextArea"><button class="primary" onclick="nextQuestion()">Наступне питання →</button></div>
+  </div>
+</section>
+
+<section id="analytics" class="page hidden">
+  <div class="card">
+    <h1>📊 Твій прогрес</h1>
+    <div class="statgrid">
+      <div class="stat"><small>Питань</small><div class="num" id="sQuestions">0</div></div>
+      <div class="stat"><small>Правильність</small><div class="num" id="sAccuracy">—</div></div>
+      <div class="stat"><small>Тренувань</small><div class="num" id="sTests">0</div></div>
+      <div class="stat"><small>Слабких тем</small><div class="num" id="sWeak">0</div></div>
+    </div>
+    <h2>Стан тем</h2>
+    <div id="topicStats"></div>
+  </div>
+</section>
+
+<section id="review" class="page hidden">
+  <div class="card">
+    <h1>🔴 Варто повторити</h1>
+    <p class="muted">Тут з'являються теми, де точність нижча за 70% або ще недостатньо даних.</p>
+    <div id="reviewList"></div>
+    <div class="actions"><button class="primary" onclick="startWeakTest()">Тренування слабких тем</button></div>
+  </div>
+</section>
+</main>
+</div>
+<footer>Перша версія • Дані зберігаються тільки у твоєму браузері</footer>
+</div>
+
+<script>
+const subjects = {
+  history:{name:"Історія України", icon:"🇺🇦"},
+  math:{name:"Математика", icon:"📐"},
+  ukrainian:{name:"Українська мова", icon:"📚"}
+};
+
+const questions = [
+ {id:1,subject:"history",topic:"Київська Русь",q:"Хто був князем Київської Русі під час хрещення Русі?",a:["Ярослав Мудрий","Володимир Великий","Святослав Ігорович","Володимир Мономах"],correct:1,e:"Хрещення Русі відбулося за князя Володимира Великого у 988 році."},
+ {id:2,subject:"history",topic:"Київська Русь",q:"Який князь уклав першу відому редакцію «Руської правди»?",a:["Олег","Ігор","Ярослав Мудрий","Данило Галицький"],correct:2,e:"Найдавнішу частину «Руської правди» пов'язують із Ярославом Мудрим."},
+ {id:3,subject:"history",topic:"Козацька доба",q:"Яка подія започаткувала Національно-визвольну війну під проводом Богдана Хмельницького?",a:["Переяславська рада","Битва під Жовтими Водами","Берестецька битва","Зборівський договір"],correct:1,e:"Битва під Жовтими Водами 1648 року була однією з перших великих перемог повстанців."},
+ {id:4,subject:"history",topic:"Козацька доба",q:"У якому році відбулася Переяславська рада?",a:["1648","1654","1667","1709"],correct:1,e:"Переяславська рада відбулася в січні 1654 року."},
+ {id:5,subject:"history",topic:"Українська революція",q:"Хто очолював Українську Центральну Раду?",a:["Симон Петлюра","Михайло Грушевський","Павло Скоропадський","Євген Коновалець"],correct:1,e:"Головою Української Центральної Ради був Михайло Грушевський."},
+ {id:6,subject:"history",topic:"Українська революція",q:"Універсал, яким проголошувалася незалежність УНР, — це:",a:["I Універсал","II Універсал","III Універсал","IV Універсал"],correct:3,e:"IV Універсал проголосив Українську Народну Республіку самостійною державою."},
+ {id:7,subject:"history",topic:"Друга світова війна",q:"Коли почалася Друга світова війна?",a:["1938","1939","1941","1945"],correct:1,e:"У Європі Друга світова війна почалася 1 вересня 1939 року нападом Німеччини на Польщу."},
+ {id:8,subject:"history",topic:"Дисидентський рух",q:"Що було характерною рисою українського дисидентського руху?",a:["Збройна боротьба проти всіх держав","Захист прав людини та української культури","Підтримка сталінізму","Відмова від культурної діяльності"],correct:1,e:"Дисиденти, зокрема шістдесятники, виступали за права людини, свободу культури та національні права."},
+
+ {id:101,subject:"math",topic:"Алгебра",q:"Чому дорівнює 3² + 4²?",a:["12","20","25","49"],correct:2,e:"3² + 4² = 9 + 16 = 25."},
+ {id:102,subject:"math",topic:"Алгебра",q:"Розв'яжіть рівняння: 2x + 6 = 14.",a:["2","3","4","5"],correct:2,e:"2x = 8, тому x = 4."},
+ {id:103,subject:"math",topic:"Геометрія",q:"Площа прямокутника зі сторонами 5 і 8 дорівнює:",a:["13","26","40","80"],correct:2,e:"Площа прямокутника дорівнює добутку сторін: 5 × 8 = 40."},
+ {id:104,subject:"math",topic:"Відсотки",q:"20% від 150 дорівнює:",a:["20","25","30","35"],correct:2,e:"150 × 0,20 = 30."},
+ {id:105,subject:"math",topic:"Функції",q:"Яке значення y = 2x + 1 при x = 3?",a:["5","6","7","8"],correct:2,e:"y = 2 × 3 + 1 = 7."},
+
+ {id:201,subject:"ukrainian",topic:"Фонетика",q:"Скільки голосних звуків в українській мові?",a:["5","6","10","12"],correct:1,e:"В українській мові 6 голосних звуків: [а], [о], [у], [е], [и], [і]."},
+ {id:202,subject:"ukrainian",topic:"Лексикологія",q:"Слова, протилежні за значенням, називаються:",a:["Синоніми","Омоніми","Антоніми","Пароніми"],correct:2,e:"Антоніми мають протилежні лексичні значення."},
+ {id:203,subject:"ukrainian",topic:"Морфологія",q:"Яка частина мови відповідає на питання «який? яка? яке?»",a:["Іменник","Дієслово","Прикметник","Прислівник"],correct:2,e:"Прикметник називає ознаку предмета і відповідає, зокрема, на питання який? яка? яке?"},
+ {id:204,subject:"ukrainian",topic:"Синтаксис",q:"Граматична основа речення складається з:",a:["Додатка і означення","Підмета і присудка","Обставини і додатка","Лише другорядних членів"],correct:1,e:"У двоскладному реченні граматична основа — підмет і присудок."},
+ {id:205,subject:"ukrainian",topic:"Орфографія",q:"У якому слові треба писати апостроф?",a:["свято","м'ята","цвях","буряк"],correct:1,e:"У слові «м'ята» після м перед я ставимо апостроф."}
+];
+
+let state = JSON.parse(localStorage.getItem("znoTrainerState") || "null") || {
+  selectedSubject:"history", results:{}, tests:0, questions:0
+};
+let test = {list:[], index:0, score:0, answered:false, timer:null, seconds:0};
+
+function save(){
+  localStorage.setItem("znoTrainerState",JSON.stringify(state));
+  document.getElementById("saveStatus").textContent="● Дані збережено";
+}
+function showPage(id){
+  document.querySelectorAll(".page").forEach(x=>x.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  document.querySelectorAll(".navbtn").forEach(x=>x.classList.toggle("active",x.dataset.page===id));
+  if(id==="analytics")renderAnalytics();
+  if(id==="review")renderReview();
+}
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+
+function renderSubjects(){
+  document.getElementById("subjects").innerHTML=Object.entries(subjects).map(([id,s])=>
+    `<div class="subject ${state.selectedSubject===id?'selected':''}" onclick="selectSubject('${id}')">
+      <strong>${s.icon} ${s.name}</strong><span class="muted small">${questions.filter(q=>q.subject===id).length} питань у демо-базі</span>
+    </div>`).join("");
+}
+function selectSubject(id){state.selectedSubject=id;save();renderSubjects()}
+function getStats(q){
+  const r=state.results[q.id]||{right:0,wrong:0};
+  const n=r.right+r.wrong;
+  return {right:r.right,wrong:r.wrong,n,acc:n?Math.round(r.right/n*100):null};
+}
+function startTest(){
+  const pool=questions.filter(q=>q.subject===state.selectedSubject);
+  test={list:shuffle(pool).slice(0,Math.min(10,pool.length)),index:0,score:0,answered:false,timer:null,seconds:300};
+  state.tests++; save(); showPage("practice"); renderQuestion(); startTimer();
+}
+function startWeakTest(){
+  const weakTopics=new Set();
+  questions.filter(q=>q.subject===state.selectedSubject).forEach(q=>{
+    const s=getStats(q); if(s.n && s.acc<70) weakTopics.add(q.topic);
+  });
+  let pool=questions.filter(q=>q.subject===state.selectedSubject && weakTopics.has(q.topic));
+  if(!pool.length) pool=questions.filter(q=>q.subject===state.selectedSubject);
+  test={list:shuffle(pool).slice(0,10),index:0,score:0,answered:false,timer:null,seconds:300};
+  state.tests++; save();showPage("practice");renderQuestion();startTimer();
+}
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+function startTimer(){
+  clearInterval(test.timer);
+  test.timer=setInterval(()=>{
+    test.seconds--; updateTimer();
+    if(test.seconds<=0){clearInterval(test.timer); finishTest();}
+  },1000);
+  updateTimer();
+}
+function updateTimer(){
+  const m=Math.floor(test.seconds/60),s=test.seconds%60;
+  const el=document.getElementById("timer"); if(!el)return;
+  el.textContent=`⏱ ${m}:${String(s).padStart(2,"0")}`;
+  el.classList.toggle("warn",test.seconds<60);
+}
+function renderQuestion(){
+  const q=test.list[test.index]; if(!q)return finishTest();
+  test.answered=false;
+  document.getElementById("qCounter").textContent=`${subjects[q.subject].name} • ${test.index+1} / ${test.list.length}`;
+  document.getElementById("qProgress").style.width=`${test.index/test.list.length*100}%`;
+  document.getElementById("questionText").textContent=q.q;
+  document.getElementById("answers").innerHTML=q.a.map((x,i)=>
+    `<button class="answer" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${x}</button>`).join("");
+  document.getElementById("feedback").innerHTML="";
+  document.getElementById("nextArea").classList.add("hidden");
+}
+function answer(i){
+  if(test.answered)return;
+  test.answered=true;
+  const q=test.list[test.index], correct=i===q.correct;
+  if(correct)test.score++;
+  state.questions++;
+  state.results[q.id]=state.results[q.id]||{right:0,wrong:0};
+  state.results[q.id][correct?"right":"wrong"]++;
+  document.querySelectorAll(".answer").forEach((b,n)=>{
+    b.classList.add("disabled");
+    if(n===q.correct)b.classList.add("correct");
+    if(n===i&&!correct)b.classList.add("wrong");
+  });
+  document.getElementById("feedback").innerHTML=
+    `<div class="alert ${correct?'good':'bad'}"><b>${correct?'✓ Правильно!':'✗ Неправильно'}</b><br>${correct?'Чудово.':`Правильна відповідь: <b>${q.a[q.correct]}</b>`}</div>
+     <div class="explanation"><b>💡 Пояснення</b><br>${q.e}<br><span class="muted small">Тема: ${q.topic}</span></div>`;
+  document.getElementById("nextArea").classList.remove("hidden");
+  save();
+}
+function nextQuestion(){
+  test.index++;
+  if(test.index>=test.list.length)finishTest(); else renderQuestion();
+}
+function finishTest(){
+  clearInterval(test.timer);
+  document.getElementById("qProgress").style.width="100%";
+  document.getElementById("questionText").textContent=`Результат: ${test.score} / ${test.list.length}`;
+  document.getElementById("answers").innerHTML="";
+  document.getElementById("feedback").innerHTML=
+    `<div class="alert ${test.score/test.list.length>=.7?'good':'warn'}">
+      Твоя точність у цьому тренуванні: <b>${Math.round(test.score/test.list.length*100)}%</b>.
+    </div>
+    <p class="muted">Помилки вже враховані в аналізі тем.</p>`;
+  document.getElementById("nextArea").innerHTML=`<button class="primary" onclick="showPage('analytics')">Переглянути аналіз →</button>`;
+  document.getElementById("nextArea").classList.remove("hidden");
+}
+function renderAnalytics(){
+  document.getElementById("sQuestions").textContent=state.questions;
+  document.getElementById("sTests").textContent=state.tests;
+  const vals=Object.values(state.results), total=vals.reduce((x,r)=>x+r.right+r.wrong,0), right=vals.reduce((x,r)=>x+r.right,0);
+  document.getElementById("sAccuracy").textContent=total?Math.round(right/total*100)+"%":"—";
+  const topicMap={};
+  questions.filter(q=>q.subject===state.selectedSubject).forEach(q=>{
+    topicMap[q.topic]??={right:0,wrong:0};
+    const r=state.results[q.id]; if(r){topicMap[q.topic].right+=r.right;topicMap[q.topic].wrong+=r.wrong;}
+  });
+  const topics=Object.entries(topicMap).map(([topic,r])=>{
+    const n=r.right+r.wrong,acc=n?Math.round(r.right/n*100):0; return {topic,n,acc};
+  });
+  const weak=topics.filter(x=>x.n&&x.acc<70).length;
+  document.getElementById("sWeak").textContent=weak;
+  document.getElementById("topicStats").innerHTML=topics.map(x=>
+    `<div class="topic"><div class="topichead"><span><b>${x.topic}</b> <span class="muted">(${x.n} відповідей)</span></span><b>${x.n?x.acc+"%":"нове"}</b></div>
+    <div class="bar"><div class="fill" style="width:${x.n?x.acc:0}%"></div></div></div>`).join("");
+}
+function renderReview(){
+  const topicMap={};
+  questions.filter(q=>q.subject===state.selectedSubject).forEach(q=>{
+    topicMap[q.topic]??={r:0,w:0};
+    const x=state.results[q.id];if(x){topicMap[q.topic].r+=x.right;topicMap[q.topic].w+=x.wrong;}
+  });
+  const arr=Object.entries(topicMap).map(([t,x])=>({t,n:x.r+x.w,acc:x.r+x.w?Math.round(x.r/(x.r+x.w)*100):0}))
+    .filter(x=>x.n&&x.acc<70).sort((a,b)=>a.acc-b.acc);
+  document.getElementById("reviewList").innerHTML=arr.length
+    ? `<ul class="list">${arr.map(x=>`<li><b>${x.t}</b> — ${x.acc}% правильних відповідей (${x.n} спроб)</li>`).join("")}</ul>`
+    : `<div class="alert good">Поки що немає тем із достатньою кількістю помилок. Пройди ще кілька питань — система почне знаходити слабкі місця.</div>`;
+}
+renderSubjects();
+</script>
+</body>
+</html>
